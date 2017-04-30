@@ -13,10 +13,10 @@ constant %key-cert := {
 
 # Type relationships.
 ok Crow::SSL::Listener ~~ Crow::Source, 'SSL listener is a source';
-ok Crow::SSL::Listener.produces ~~ Crow::SSL::Connection, 'SSL listener produces connections';
-ok Crow::SSL::Connection ~~ Crow::Connection, 'SSL connection is a connection';
-ok Crow::SSL::Connection ~~ Crow::Replyable, 'SSL connection is replyable';
-ok Crow::SSL::Connection.produces ~~ Crow::TCP::Message, 'SSL connection produces TCP messages';
+ok Crow::SSL::Listener.produces ~~ Crow::SSL::ServerConnection, 'SSL listener produces connections';
+ok Crow::SSL::ServerConnection ~~ Crow::Connection, 'SSL connection is a connection';
+ok Crow::SSL::ServerConnection ~~ Crow::Replyable, 'SSL connection is replyable';
+ok Crow::SSL::ServerConnection.produces ~~ Crow::TCP::Message, 'SSL connection produces TCP messages';
 
 # Crow::SSL::Listener
 {
@@ -35,13 +35,13 @@ ok Crow::SSL::Connection.produces ~~ Crow::TCP::Message, 'SSL connection produce
     my $client-conn-a;
     lives-ok { $client-conn-a = await IO::Socket::Async::SSL.connect('localhost', TEST_PORT, |%ca) },
         'Listening for connections once the Supply is tapped';
-    ok $server-conns.receive ~~ Crow::SSL::Connection,
+    ok $server-conns.receive ~~ Crow::SSL::ServerConnection,
         'Listener emitted a SSL connection';
     nok $server-conns.poll, 'Only that one connection emitted';
     $client-conn-a.close;
 
     my $client-conn-b = await IO::Socket::Async::SSL.connect('localhost', TEST_PORT, |%ca);
-    ok $server-conns.receive ~~ Crow::SSL::Connection,
+    ok $server-conns.receive ~~ Crow::SSL::ServerConnection,
         'Listener emitted second connection';
     nok $server-conns.poll, 'Only that one connection emitted';
     $client-conn-b.close;
@@ -51,7 +51,7 @@ ok Crow::SSL::Connection.produces ~~ Crow::TCP::Message, 'SSL connection produce
         'Not listening after Supply tap closed';
 }
 
-# Crow::SSL::Connection and Crow::TCP::Message
+# Crow::SSL::ServerConnection and Crow::TCP::Message
 {
     my $lis = Crow::SSL::Listener.new(port => TEST_PORT, |%key-cert);
     my $server-conns = Channel.new;
