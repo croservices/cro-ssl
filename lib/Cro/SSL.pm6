@@ -7,6 +7,8 @@ use Cro::TCP;
 use Cro::Types;
 use IO::Socket::Async::SSL;
 
+sub supports-alpn(--> Bool) is export { IO::Socket::Async::SSL.supports-alpn }
+
 class Cro::SSL::Replier does Cro::Sink {
     has $!socket;
     
@@ -54,22 +56,6 @@ class Cro::SSL::Listener does Cro::Source {
 
     method incoming() {
         supply {
-            with %!ssl-config<http> {
-                if $_ == <1.1 2> && !IO::Socket::Async::SSL.supports-alpn {
-                    die 'HTTP/2 is specified, however ALPN is not supported';
-                } elsif $_ == <1.1 2> {
-                    %!ssl-config<alpn> = <h2 http/1.1>;
-                } elsif $_ == <1.1> {
-                    %!ssl-config<alpn> = <http/1.1>;
-                }
-            }
-            without %!ssl-config<http> {
-                if IO::Socket::Async::SSL.supports-alpn {
-                    %!ssl-config<alpn> = <h2 http/1.1>;
-                } else {
-                    %!ssl-config<alpn> = <http/1.1>;
-                }
-            }
             whenever IO::Socket::Async::SSL.listen($!host, $!port, |%!ssl-config) -> $socket {
                 emit Cro::SSL::ServerConnection.new(:$socket);
             }
