@@ -33,7 +33,7 @@ class Cro::SSL::ServerConnection does Cro::Connection does Cro::Replyable {
 
     method produces() { Cro::TCP::Message }
 
-    submethod BUILD(:$!socket!) {
+    submethod BUILD(:$!socket!, :$!alpn-result!) {
         $!replier = Cro::SSL::Replier.new(:$!socket)
     }
 
