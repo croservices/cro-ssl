@@ -204,22 +204,14 @@ my class UppercaseTransform does Cro::Transform {
         $completion.keep;
     };
     await Promise.anyof($completion, Promise.in(5));
-    if $completion.status ~~ Kept {
-        ok $c.alpn-result eq 'h2', 'ALPN is set by Cro::SSL::Listener';
-    } else {
-        flunk 'ALPN is set by Cro::SSL::Listener';
-    }
+    is $completion.status, Kept, 'ALPN is set by Cro::SSL::Listener';
     $completion = Promise.new;
     start {
         $c = await IO::Socket::Async::SSL.connect('localhost', TEST_PORT, |%ca);
         $completion.keep;
     };
     await Promise.anyof($completion, Promise.in(5));
-    if $completion.status ~~ Kept {
-        is $c.alpn-result, Nil, 'ALPN is set to Nil by Cro::SSL::Listener';
-    } else {
-        flunk 'ALPN is set to Nil by Cro::SSL::Listener';
-    }
+    is $completion.status, Kept, 'ALPN is set to Nil by Cro::SSL::Listener';
 }
 
 done-testing;
