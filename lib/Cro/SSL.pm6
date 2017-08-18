@@ -45,7 +45,7 @@ class Cro::SSL::ServerConnection does Cro::Connection does Cro::Replyable {
     method incoming() {
         supply {
             whenever $!socket.Supply(:bin) -> $data {
-                emit Cro::TCP::Message.new(:$data);
+                emit Cro::TCP::Message.new(:$data, connection => $!socket);
             }
         }
     }
