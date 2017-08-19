@@ -29,16 +29,16 @@ class Cro::SSL::Replier does Cro::Sink {
 class Cro::SSL::ServerConnection does Cro::Connection does Cro::Replyable {
     has $!socket;
     has $.replier;
-    has $.alpn-result;
 
     method socket-host() { $!socket.socket-host }
     method socket-port() { $!socket.socket-port }
     method peer-host()   { $!socket.peer-host }
     method peer-port()   { $!socket.peer-port }
+    method alpn-result() { $!socket.alpn-result }
 
     method produces() { Cro::TCP::Message }
 
-    submethod BUILD(:$!socket!, :$!alpn-result!) {
+    submethod BUILD(:$!socket!) {
         $!replier = Cro::SSL::Replier.new(:$!socket)
     }
 
@@ -63,7 +63,7 @@ class Cro::SSL::Listener does Cro::Source {
     method incoming() {
         supply {
             whenever IO::Socket::Async::SSL.listen($!host, $!port, |%!ssl-config) -> $socket {
-                emit Cro::SSL::ServerConnection.new(:$socket, alpn-result => $socket.alpn-result);
+                emit Cro::SSL::ServerConnection.new(:$socket);
             }
         }
     }
