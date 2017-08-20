@@ -78,6 +78,8 @@ class Cro::SSL::Connector does Cro::Connector {
         method consumes() { Cro::TCP::Message }
         method produces() { Cro::TCP::Message }
 
+        method alpn-result() { $!socket.alpn-result }
+
         method transformer(Supply $incoming --> Supply) {
             supply {
                 whenever $incoming {

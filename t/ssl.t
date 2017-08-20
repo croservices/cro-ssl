@@ -219,4 +219,53 @@ my class UppercaseTransform does Cro::Transform {
     $tap.close;
 }
 
+{
+    my $listener = Cro::SSL::Listener.new(port => TEST_PORT, |%key-cert, alpn => <h2 http/1.1>);
+    my $loud-service = Cro.compose($listener, UppercaseTransform);
+    $loud-service.start;
+
+    my class DoubleTransform does Cro::Transform {
+        method consumes() { Cro::TCP::Message }
+        method produces() { Cro::TCP::Message }
+        method transformer($pipeline) {
+            supply {
+                whenever $pipeline {
+                    emit Cro::TCP::Message.new(data => .data ~ .data);
+                }
+            }
+        }
+    }
+
+    my $pipeline = Cro.compose(
+        Cro::SSL::Connector,
+        Cro::ConnectionConditional.new(
+            { (.alpn-result // '') eq 'h2' } => [DoubleTransform, DoubleTransform],
+            DoubleTransform
+        )
+    );
+    my $source = supply { emit Cro::TCP::Message.new( :data('bbq'.encode('ascii')) ) }
+    {
+        my $responses = $pipeline.establish(port => TEST_PORT, |%ca, $source);
+        react {
+            whenever $responses -> $message {
+                is $message.data.decode('ascii'), 'BBQBBQ',
+                    'When no ALPN outcome, picked default transform';
+                done;
+            }
+        }
+    }
+    {
+        my $responses = $pipeline.establish(port => TEST_PORT, |%ca, alpn => <h2>, $source);
+        react {
+            whenever $responses -> $message {
+                is $message.data.decode('ascii'), 'BBQBBQBBQBBQ',
+                    'When correct ALPN outcome, picked conditioned tansform';
+                done;
+            }
+        }
+    }
+
+    $loud-service.stop;
+}
+
 done-testing;
