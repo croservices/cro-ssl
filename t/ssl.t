@@ -198,17 +198,25 @@ my class UppercaseTransform does Cro::Transform {
     my $incoming = $lis.incoming;
     my $tap = $incoming.tap({ $server-conns.send($_) });
 
-    my $c = IO::Socket::Async::SSL.connect('localhost', TEST_PORT, |%ca, alpn => <h2>);
-    await Promise.anyof($c, Promise.in(5));
-    is $c.status, Kept,
-        'Can connect to a Cro::SSL::Listener with ALPN set up with ALPN from client';
-    is $server-conns.receive.alpn-result, 'h2', 'ALPN negotiated result set on connection';
+    {
+        my $c = IO::Socket::Async::SSL.connect('localhost', TEST_PORT, |%ca, alpn => <h2>);
+        await Promise.anyof($c, Promise.in(5));
+        is $c.status, Kept,
+            'Can connect to a Cro::SSL::Listener with ALPN set up with ALPN from client';
+        is $server-conns.receive.alpn-result, 'h2', 'ALPN negotiated result set on connection';
+        $c.result.close;
+    }
 
-    $c = IO::Socket::Async::SSL.connect('localhost', TEST_PORT, |%ca);
-    await Promise.anyof($c, Promise.in(5));
-    is $c.status, Kept,
-        'Can connect to a Cro::SSL::Listener with ALPN set up without ALPN from client';
-    nok $server-conns.receive.alpn-result, 'No ALPN negotiation on this connection';
+    {
+        my $c = IO::Socket::Async::SSL.connect('localhost', TEST_PORT, |%ca);
+        await Promise.anyof($c, Promise.in(5));
+        is $c.status, Kept,
+            'Can connect to a Cro::SSL::Listener with ALPN set up without ALPN from client';
+        nok $server-conns.receive.alpn-result, 'No ALPN negotiation on this connection';
+        $c.result.close;
+    }
+
+    $tap.close;
 }
 
 done-testing;
