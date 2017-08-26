@@ -10,5 +10,5 @@
         "Cro::SSL": "lib/Cro/SSL.pm6"
     },
     "resources": [],
-    "source-url"    : "https://github.com/jnthn/cro-ssl.git"
+    "source-url"    : "https://github.com/croservices/cro-ssl.git"
 }
